@@ -5,27 +5,20 @@ import re
 import test
 
 method_names = dir(test)
-
 function_dict = {}
-# for name in method_names:
-#     method_dict[name] = []
-
 def_re = 'def.*?\('
 def_names = []
 contents = Path('test.py').read_text()
 
-# try to break contents by \n
+# break contents by \n
 split_contents = contents.split('\n')
 
 in_function = False
 function_name = None
 
 for line in split_contents:
-    print(line)
-    import pdb;pdb.set_trace()
-    if line.startswith('\n?#'):
-        print('hey')
-        break
+    if re.match('\s*#', line):
+        continue
     search = re.search(def_re, line)
     if search is not None:
         in_function = True
