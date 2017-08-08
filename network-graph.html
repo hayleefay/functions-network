@@ -10,6 +10,12 @@
   </head>
   <body>
     <script type="text/javascript" charset="utf-8">
+    var functions = [
+      { functionName: 'return_one',  calls: [] },
+      { functionName: 'return_two',  calls: ['return_one'] },
+      { functionName: 'return_three',  calls: ['return_one', 'return_two'] },
+    ];
+
     var w = 1300, h = 800;
 
     var labelDistance = 0;
@@ -21,9 +27,9 @@
     var labelAnchorLinks = [];
     var links = [];
 
-    for(var i = 0; i < 30; i++) {
+    for(var i = 0; i < functions.length; i++) {
       var node = {
-        label : "node " + i
+        label : functions[i]["functionName"]
       };
       nodes.push(node);
       labelAnchors.push({
