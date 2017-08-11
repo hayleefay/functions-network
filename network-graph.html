@@ -5,15 +5,13 @@
     <meta charset="utf-8">
 		<title>Force based label placement</title>
 		<script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?2.6.0"></script>
-		<script type="text/javascript" src="http://mbostock.github.com/d3/d3.layout.js?2.6.0"></script>
-		<script type="text/javascript" src="http://mbostock.github.com/d3/d3.geom.js?2.6.0"></script>
   </head>
   <body>
     <script type="text/javascript" charset="utf-8">
     var functions = [
       { functionName: 'return_one',  calls: [] },
       { functionName: 'return_two',  calls: ['return_one'] },
-      { functionName: 'return_three',  calls: ['return_one', 'return_two'] },
+      { functionName: 'return_three',  calls: ['return_one'] },
     ];
 
     var w = 1300, h = 800;
@@ -41,13 +39,23 @@
     };
 
     for(var i = 0; i < nodes.length; i++) {
-      for(var j = 0; j < i; j++) {
-        if(Math.random() > .95)
-          links.push({
-            source : i,
-            target : j,
-            weight : Math.random()
-          });
+      // The current item inside the `functions` array
+      var currentFunctionObject = functions[i];
+
+      for(var j = 0; j < currentFunctionObject["calls"].length; j++) {
+        // The current item within the `calls` array within the current object
+        // within the `functions` array
+        var currentFunctionName = currentFunctionObject['calls'][j];
+
+        links.push({
+          source : i,
+          target : functions.findIndex(function(func) {
+            // Compares one item from the functions array's function name
+            // with the current function name from our double for loop
+            return func.functionName === currentFunctionName;
+          }),
+          weight : Math.random()
+        });
       }
       labelAnchorLinks.push({
         source : i * 2,
