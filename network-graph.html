@@ -1,139 +1,120 @@
 <!DOCTYPE html>
+<meta charset="utf-8">
+<script src="http://d3js.org/d3.v3.js"></script>
+<style>
 
-<html>
-  <head>
-    <meta charset="utf-8">
-		<title>Force based label placement</title>
-		<script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?2.6.0"></script>
-		<script type="text/javascript" src="http://mbostock.github.com/d3/d3.layout.js?2.6.0"></script>
-		<script type="text/javascript" src="http://mbostock.github.com/d3/d3.geom.js?2.6.0"></script>
-  </head>
-  <body>
-    <script type="text/javascript" charset="utf-8">
-    var functions = [
-      { functionName: 'return_one',  calls: [] },
-      { functionName: 'return_two',  calls: ['return_one'] },
-      { functionName: 'return_three',  calls: ['return_one', 'return_two'] },
-    ];
+path.link {
+  fill: none;
+  stroke: #666;
+  stroke-width: 1.5px;
+}
 
-    var w = 1300, h = 800;
+circle {
+  fill: #ccc;
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
 
-    var labelDistance = 0;
+text {
+  fill: #000;
+  font: 10px sans-serif;
+  pointer-events: none;
+}
 
-    var vis = d3.select("body").append("svg:svg").attr("width", w).attr("height", h);
+</style>
+<body>
+<script>
 
-    var nodes = [];
-    var labelAnchors = [];
-    var labelAnchorLinks = [];
-    var links = [];
+// get the data
+d3.csv("function-data.csv", function(error, links) {
 
-    for(var i = 0; i < functions.length; i++) {
-      var node = {
-        label : functions[i]["functionName"]
-      };
-      nodes.push(node);
-      labelAnchors.push({
-        node : node
-      });
-      labelAnchors.push({
-        node : node
-      });
-    };
+var nodes = {};
 
-    for(var i = 0; i < nodes.length; i++) {
-      for(var j = 0; j < i; j++) {
-        if(Math.random() > .95)
-          links.push({
-            source : i,
-            target : j,
-            weight : Math.random()
-          });
-      }
-      labelAnchorLinks.push({
-        source : i * 2,
-        target : i * 2 + 1,
-        weight : 1
-      });
-    };
+// Compute the distinct nodes from the links.
+links.forEach(function(link) {
+    link.source = nodes[link.source] ||
+        (nodes[link.source] = {name: link.source});
+    link.target = nodes[link.target] ||
+        (nodes[link.target] = {name: link.target});
+    link.value = +link.value;
+});
 
-    var force = d3.layout.force().size([w, h]).nodes(nodes).links(links).gravity(1).linkDistance(50).charge(-3000).linkStrength(function(x) {
-      return x.weight * 10
+var width = 960,
+    height = 500;
+
+var force = d3.layout.force()
+    .nodes(d3.values(nodes))
+    .links(links)
+    .size([width, height])
+    .linkDistance(60)
+    .charge(-300)
+    .on("tick", tick)
+    .start();
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+// build the arrow.
+svg.append("svg:defs").selectAll("marker")
+    .data(["end"])      // Different link/path types can be defined here
+  .enter().append("svg:marker")    // This section adds in the arrows
+    .attr("id", String)
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 15)
+    .attr("refY", -1.5)
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 6)
+    .attr("orient", "auto")
+  .append("svg:path")
+    .attr("d", "M0,-5L10,0L0,5");
+
+// add the links and the arrows
+var path = svg.append("svg:g").selectAll("path")
+    .data(force.links())
+  .enter().append("svg:path")
+//    .attr("class", function(d) { return "link " + d.type; })
+    .attr("class", "link")
+    .attr("marker-end", "url(#end)");
+
+// define the nodes
+var node = svg.selectAll(".node")
+    .data(force.nodes())
+  .enter().append("g")
+    .attr("class", "node")
+    .call(force.drag);
+
+// add the nodes
+node.append("circle")
+    .attr("r", 5);
+
+// add the text
+node.append("text")
+    .attr("x", 12)
+    .attr("dy", ".35em")
+    .text(function(d) { return d.name; });
+
+// add the curvy lines
+function tick() {
+    path.attr("d", function(d) {
+        var dx = d.target.x - d.source.x,
+            dy = d.target.y - d.source.y,
+            dr = Math.sqrt(dx * dx + dy * dy);
+        return "M" +
+            d.source.x + "," +
+            d.source.y + "A" +
+            dr + "," + dr + " 0 0,1 " +
+            d.target.x + "," +
+            d.target.y;
     });
 
+    node
+        .attr("transform", function(d) {
+  	    return "translate(" + d.x + "," + d.y + ")"; });
+}
 
-    force.start();
+});
 
-    var force2 = d3.layout.force().nodes(labelAnchors).links(labelAnchorLinks).gravity(0).linkDistance(0).linkStrength(8).charge(-100).size([w, h]);
-    force2.start();
-
-    var link = vis.selectAll("line.link").data(links).enter().append("svg:line").attr("class", "link").style("stroke", "#CCC");
-
-    var node = vis.selectAll("g.node").data(force.nodes()).enter().append("svg:g").attr("class", "node");
-    node.append("svg:circle").attr("r", 5).style("fill", "#555").style("stroke", "#FFF").style("stroke-width", 3);
-    node.call(force.drag);
-
-
-    var anchorLink = vis.selectAll("line.anchorLink").data(labelAnchorLinks)//.enter().append("svg:line").attr("class", "anchorLink").style("stroke", "#999");
-
-    var anchorNode = vis.selectAll("g.anchorNode").data(force2.nodes()).enter().append("svg:g").attr("class", "anchorNode");
-    anchorNode.append("svg:circle").attr("r", 0).style("fill", "#FFF");
-      anchorNode.append("svg:text").text(function(d, i) {
-      return i % 2 == 0 ? "" : d.node.label
-    }).style("fill", "#555").style("font-family", "Arial").style("font-size", 12);
-
-    var updateLink = function() {
-      this.attr("x1", function(d) {
-        return d.source.x;
-      }).attr("y1", function(d) {
-        return d.source.y;
-      }).attr("x2", function(d) {
-        return d.target.x;
-      }).attr("y2", function(d) {
-        return d.target.y;
-      });
-
-    }
-
-    var updateNode = function() {
-      this.attr("transform", function(d) {
-        return "translate(" + d.x + "," + d.y + ")";
-      });
-
-    }
-
-
-    force.on("tick", function() {
-
-      force2.start();
-
-      node.call(updateNode);
-
-      anchorNode.each(function(d, i) {
-        if(i % 2 == 0) {
-          d.x = d.node.x;
-          d.y = d.node.y;
-        } else {
-          var b = this.childNodes[1].getBBox();
-
-          var diffX = d.x - d.node.x;
-          var diffY = d.y - d.node.y;
-
-          var dist = Math.sqrt(diffX * diffX + diffY * diffY);
-
-          var shiftX = b.width * (diffX - dist) / (dist * 2);
-          shiftX = Math.max(-b.width, Math.min(0, shiftX));
-          var shiftY = 5;
-          this.childNodes[1].setAttribute("transform", "translate(" + shiftX + "," + shiftY + ")");
-        }
-      });
-
-
-      anchorNode.call(updateNode);
-
-      link.call(updateLink);
-      anchorLink.call(updateLink);
-
-    });
-    </script>
-  </body>
+</script>
+</body>
 </html>
