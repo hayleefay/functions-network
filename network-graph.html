@@ -5,7 +5,6 @@
 
 path.link {
   fill: none;
-  stroke: #666;
   stroke-width: 1.5px;
 }
 
@@ -16,7 +15,7 @@ circle {
 
 text {
   fill: #000;
-  font: 10px sans-serif;
+  font: 15px sans-serif;
   pointer-events: none;
 }
 
@@ -68,31 +67,9 @@ svg.append("svg:defs").selectAll("marker")
   .append("svg:path")
     .attr("d", "M0,-5L10,0L0,5");
 
-// create color variable
-var ordinalColorScale = d3.scale.category20();
-var dataName = "";
-var dataIndex = 0;
-
-// add the links and the arrows
-var path = svg.append("svg:g").selectAll("path")
-    .data(force.links())
-  .enter().append("svg:path")
-    .attr("class", "link")
-    .style("stroke", function(d,i){
-      if (dataName === d.source.name || dataName === "") {
-        console.log(dataName, dataIndex, d, i);
-        dataName = d.source.name;
-        debugger
-        return ordinalColorScale(dataIndex);
-      } else {
-        console.log(dataName, dataIndex, d, i);
-        dataName = d.source.name;
-        dataIndex++;
-        debugger
-        return ordinalColorScale(dataIndex);
-      }
-    })
-    .attr("marker-end", "url(#end)");
+// create color variable and color object
+var ordinalColorScale = d3.scale.category10();
+var nodeColors = {};
 
 // define the nodes
 var node = svg.selectAll(".node")
@@ -101,12 +78,24 @@ var node = svg.selectAll(".node")
     .attr("class", "node")
     .call(force.drag);
 
-// add the nodes
+// add the nodes and create nodeColors object
 node.append("circle")
     .attr("r", 5)
     .style("fill", function(d,i){
+      nodeColors[d.name] = i;
       return ordinalColorScale(i);
     });
+
+// add the links and the arrows
+var path = svg.append("svg:g").selectAll("path")
+    .data(force.links())
+  .enter().append("svg:path")
+    .attr("class", "link")
+    .style("stroke", function(d,i){
+      colorIndex = nodeColors[d.source.name];
+      return ordinalColorScale(colorIndex);
+    })
+    .attr("marker-end", "url(#end)");
 
 // add the text
 node.append("text")
