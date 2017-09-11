@@ -14,7 +14,7 @@ circle {
 }
 
 text {
-  fill: #000;
+  fill: none;
   font: 15px sans-serif;
   pointer-events: none;
 }
@@ -101,6 +101,13 @@ var path = svg.append("svg:g").selectAll("path")
 node.append("text")
     .attr("x", 12)
     .attr("dy", ".35em")
+    .style("fill", function(d,i){
+      if (Object.keys(nodeColors).length < 10) {
+        return "#000";
+      } else {
+        return "none";
+      }
+    })
     .text(function(d){
       return d.name;
     });
