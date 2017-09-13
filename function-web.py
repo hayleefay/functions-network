@@ -1,14 +1,14 @@
 from pathlib import Path
 import re
-import test
+import test_files.test2 as function_file
 import pandas as pd
 from http.server import HTTPServer, CGIHTTPRequestHandler
 
-method_names = dir(test)
+method_names = dir(function_file)
 function_dict = {}
 def_re = 'def.*?\('
 def_names = []
-contents = Path('test.py').read_text()
+contents = Path('test_files/test2.py').read_text()
 
 # break contents by \n
 split_contents = contents.split('\n')
